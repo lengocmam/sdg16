@@ -17,6 +17,22 @@ lập theo lớp (data/ML, backend, frontend) trong nhóm.
 > (decision-support), không phải bằng chứng đánh giá tác động chính sách
 > mang tính nhân quả.
 
+## Mục lục
+
+- [0. Bối cảnh nghiên cứu](#0-bối-cảnh-nghiên-cứu)
+- [1. Kiến trúc](#1-kiến-trúc)
+- [2. Chạy nhanh](#2-chạy-nhanh)
+- [3. Chuẩn bị dữ liệu và train baseline](#3-chuẩn-bị-dữ-liệu-và-train-baseline)
+- [4. Bật RAG và LLM](#4-bật-rag-và-llm)
+- [5. Các profile Docker](#5-các-profile-docker)
+- [6. Các quyết định dữ liệu quan trọng](#6-các-quyết-định-dữ-liệu-quan-trọng)
+- [7. Lộ trình triển khai](#7-lộ-trình-triển-khai)
+- [8. Biến môi trường](#8-biến-môi-trường)
+- [9. Trạng thái các thành phần](#9-trạng-thái-các-thành-phần)
+- [10. Đóng góp](#10-đóng-góp)
+- [Tham khảo](#tham-khảo)
+- [Giấy phép](#giấy-phép)
+
 ## 0. Bối cảnh nghiên cứu
 
 SDSN công bố điểm SDG16 tổng hợp cho từng quốc gia (Sustainable Development
@@ -287,6 +303,50 @@ Workflow chi tiết và tiêu chí hoàn thành nằm tại
 4. Kiểm chứng dữ liệu gốc cho các chỉ số hiện đang impute (`n_sdg16_rsf`,
    `n_sdg16_exprop`) trước khi dùng trong khuyến nghị chính sách.
 
+## 8. Biến môi trường
+
+Tối thiểu cần khai báo trong `.env` (copy từ `.env.example`):
+
+| Biến | Bắt buộc | Mô tả |
+|---|---|---|
+| `SPARK_MASTER_URL` | Không (mặc định local) | Địa chỉ Spark master khi chạy cluster |
+| `EMBEDDING_PROVIDER` | Khi bật RAG | `openai-compatible` hoặc `ollama` |
+| `EMBEDDING_MODEL` | Khi bật RAG | Tên model embedding |
+| `LLM_PROVIDER` | Khi bật RAG/LLM | `openai-compatible` hoặc `ollama` |
+| `LLM_MODEL` | Khi bật RAG/LLM | Tên model chat |
+| `LLM_API_KEY` | Khi dùng provider ngoài | API key của provider |
+| `LLM_BASE_URL` | Khi dùng provider ngoài | Base URL của provider |
+| `QDRANT_URL` | Không (mặc định `http://qdrant:6333`) | Địa chỉ Qdrant nội bộ trong Docker network |
+
+*(Rà lại danh sách này theo `.env.example` thật của repo trước khi merge —
+đây là tập hợp tối thiểu suy ra từ các bước cấu hình ở trên.)*
+
+## 9. Trạng thái các thành phần
+
+| Thành phần | Trạng thái |
+|---|---|
+| Data lake + PySpark pipeline | Sẵn sàng |
+| Spark MLlib Linear Regression baseline | Sẵn sàng |
+| FastAPI ML service (`/predict`, `/explain`) | Sẵn sàng, trả `503` khi chưa có model |
+| Spring Boot public API | Sẵn sàng |
+| Vue dashboard | Sẵn sàng |
+| RAG (PDF parser + Qdrant indexer) | Sẵn sàng, tắt mặc định |
+| LLM (OpenAI-compatible / Ollama) | Sẵn sàng, tắt mặc định |
+| XGBoost + SHAP TreeExplainer | Chưa triển khai — kế hoạch |
+| GRU forecasting (2024–2030) | Chưa triển khai — kế hoạch |
+| Subnational drill-down (PAPI/PCI) | Chưa triển khai — kế hoạch |
+
+## 10. Đóng góp
+
+1. Tạo branch từ `main` theo quy ước `feature/<tên-việc>` hoặc `fix/<tên-việc>`.
+2. Với thay đổi ở pipeline/model, chạy lại `run_pipeline all` và đính kèm
+   `metadata.json` mới trong PR để nhóm review được thay đổi metric.
+3. Với thay đổi API (Spring Boot/FastAPI), cập nhật bảng endpoint tương ứng
+   trong README.
+4. Mọi thay đổi liên quan tới dữ liệu impute hoặc cách chia split cần nêu rõ
+   lý do trong PR, vì đây là các quyết định đã ảnh hưởng trực tiếp tới độ tin
+   cậy kết quả nghiên cứu gốc.
+
 ## Tham khảo
 
 - Sachs, J.D., Lafortune, G., & Fuller, G. (2024). *The SDGs and the UN
@@ -297,3 +357,8 @@ Workflow chi tiết và tiêu chí hoàn thành nằm tại
   VCCI.
 - Lundberg, S. M., & Lee, S.-I. (2017). *A unified approach to interpreting
   model predictions*. NeurIPS.
+
+## Giấy phép
+
+*(Chưa xác định — thêm license phù hợp, ví dụ MIT hoặc Apache-2.0, trước khi
+public repo.)*
